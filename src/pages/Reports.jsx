@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   BarChart, 
@@ -464,7 +463,7 @@ const Reports = () => {
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">Average Stay</h4>
                     <div className="space-y-2 mt-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Short Term (< 1 month)</span>
+                        <span className="text-sm">Short Term (&lt; 1 month)</span>
                         <span className="text-sm font-medium">20%</span>
                       </div>
                       <div className="flex items-center justify-between">
@@ -472,7 +471,7 @@ const Reports = () => {
                         <span className="text-sm font-medium">45%</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Long Term (> 3 months)</span>
+                        <span className="text-sm">Long Term (&gt; 3 months)</span>
                         <span className="text-sm font-medium">35%</span>
                       </div>
                     </div>
