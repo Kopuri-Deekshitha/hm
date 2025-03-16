@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { Calendar, Clock, Filter, Plus, Search, Check, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Filter, Plus, Search, Check, ArrowUpDown, ChevronRight, X } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Table,
@@ -17,6 +16,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,6 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Sample booking data
 const bookings = [
@@ -237,9 +246,38 @@ const BookingDetails = ({ booking, onClose }) => {
 };
 
 // Bookings Table Row Component
-const BookingRow = ({ booking, onViewDetails }) => {
+const BookingRow = ({ booking, onViewDetails, isLoading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isMobile = useIsMobile();
+
+  if (isLoading) {
+    if (isMobile) {
+      return (
+        <div className="border-b border-border/40 p-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <Skeleton className="h-5 w-32 mb-2" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <Skeleton className="h-6 w-20" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <TableRow>
+        <TableCell><Skeleton className="h-4 w-14" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-10" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+        <TableCell className="text-right"><Skeleton className="h-8 w-12 ml-auto" /></TableCell>
+      </TableRow>
+    );
+  }
 
   if (isMobile) {
     return (
@@ -301,11 +339,63 @@ const BookingRow = ({ booking, onViewDetails }) => {
   );
 };
 
+// New Booking Form
+const NewBookingForm = ({ onClose }) => {
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Guest Name</label>
+          <Input placeholder="Enter guest name" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Room Number</label>
+          <Input type="number" placeholder="Room number" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Check-in Date</label>
+          <Input type="date" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Check-out Date</label>
+          <Input type="date" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Phone Number</label>
+          <Input placeholder="Phone number" />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Email</label>
+          <Input type="email" placeholder="Email address" />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <label className="text-sm font-medium">Notes</label>
+          <Input placeholder="Special requests or notes" />
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onClose}>Cancel</Button>
+        <Button type="submit">Create Booking</Button>
+      </DialogFooter>
+    </>
+  );
+};
+
 // Main Bookings component
 const Bookings = () => {
   const [selectedTab, setSelectedTab] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isNewBookingOpen, setIsNewBookingOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
+
+  // Simulate loading
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Filter bookings based on the selected tab
   const getFilteredBookings = () => {
@@ -327,28 +417,45 @@ const Bookings = () => {
     setSelectedBooking(null);
   };
 
+  const handleCloseNewBooking = () => {
+    setIsNewBookingOpen(false);
+  };
+
   return (
     <div className="min-h-screen flex">
       <Sidebar />
-      <div className="flex-1 ml-64">
+      <div className={`flex-1 ${!isMobile ? 'ml-64' : ''}`}>
         <Header />
-        <main className="p-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 animate-in fade-in">
+        <main className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 md:mb-8 animate-in fade-in">
             <div>
               <h1 className="font-semibold tracking-tight">Bookings</h1>
               <p className="text-muted-foreground">Manage reservations and check-ins</p>
             </div>
             <div className="flex mt-4 md:mt-0">
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Booking
-              </Button>
+              <Dialog open={isNewBookingOpen} onOpenChange={setIsNewBookingOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Booking
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Add New Booking</DialogTitle>
+                    <DialogDescription>
+                      Enter the details to create a new booking.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <NewBookingForm onClose={handleCloseNewBooking} />
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
           
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <div className="flex justify-between items-center mb-4">
-              <TabsList>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+              <TabsList className="mb-4 md:mb-0">
                 <TabsTrigger value="all">All Bookings</TabsTrigger>
                 <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
                 <TabsTrigger value="active">Active</TabsTrigger>
@@ -403,13 +510,19 @@ const Bookings = () => {
               <TabsContent value="all" className="m-0">
                 {isMobile ? (
                   <div className="divide-y divide-border/40">
-                    {getFilteredBookings().map(booking => (
-                      <BookingRow 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
+                    {isLoading ? (
+                      Array(5).fill(0).map((_, index) => (
+                        <BookingRow key={index} isLoading={true} />
+                      ))
+                    ) : (
+                      getFilteredBookings().map(booking => (
+                        <BookingRow 
+                          key={booking.id} 
+                          booking={booking} 
+                          onViewDetails={handleViewDetails}
+                        />
+                      ))
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-md border">
@@ -432,13 +545,19 @@ const Bookings = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getFilteredBookings().map(booking => (
-                          <BookingRow 
-                            key={booking.id} 
-                            booking={booking} 
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
+                        {isLoading ? (
+                          Array(5).fill(0).map((_, index) => (
+                            <BookingRow key={index} isLoading={true} />
+                          ))
+                        ) : (
+                          getFilteredBookings().map(booking => (
+                            <BookingRow 
+                              key={booking.id} 
+                              booking={booking} 
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -448,13 +567,19 @@ const Bookings = () => {
               <TabsContent value="upcoming" className="m-0">
                 {isMobile ? (
                   <div className="divide-y divide-border/40">
-                    {getFilteredBookings().map(booking => (
-                      <BookingRow 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
+                    {isLoading ? (
+                      Array(3).fill(0).map((_, index) => (
+                        <BookingRow key={index} isLoading={true} />
+                      ))
+                    ) : (
+                      getFilteredBookings().map(booking => (
+                        <BookingRow 
+                          key={booking.id} 
+                          booking={booking} 
+                          onViewDetails={handleViewDetails}
+                        />
+                      ))
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-md border">
@@ -472,13 +597,19 @@ const Bookings = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getFilteredBookings().map(booking => (
-                          <BookingRow 
-                            key={booking.id} 
-                            booking={booking} 
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
+                        {isLoading ? (
+                          Array(3).fill(0).map((_, index) => (
+                            <BookingRow key={index} isLoading={true} />
+                          ))
+                        ) : (
+                          getFilteredBookings().map(booking => (
+                            <BookingRow 
+                              key={booking.id} 
+                              booking={booking} 
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -488,13 +619,19 @@ const Bookings = () => {
               <TabsContent value="active" className="m-0">
                 {isMobile ? (
                   <div className="divide-y divide-border/40">
-                    {getFilteredBookings().map(booking => (
-                      <BookingRow 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
+                    {isLoading ? (
+                      Array(2).fill(0).map((_, index) => (
+                        <BookingRow key={index} isLoading={true} />
+                      ))
+                    ) : (
+                      getFilteredBookings().map(booking => (
+                        <BookingRow 
+                          key={booking.id} 
+                          booking={booking} 
+                          onViewDetails={handleViewDetails}
+                        />
+                      ))
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-md border">
@@ -512,13 +649,19 @@ const Bookings = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getFilteredBookings().map(booking => (
-                          <BookingRow 
-                            key={booking.id} 
-                            booking={booking} 
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
+                        {isLoading ? (
+                          Array(2).fill(0).map((_, index) => (
+                            <BookingRow key={index} isLoading={true} />
+                          ))
+                        ) : (
+                          getFilteredBookings().map(booking => (
+                            <BookingRow 
+                              key={booking.id} 
+                              booking={booking} 
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -528,13 +671,19 @@ const Bookings = () => {
               <TabsContent value="past" className="m-0">
                 {isMobile ? (
                   <div className="divide-y divide-border/40">
-                    {getFilteredBookings().map(booking => (
-                      <BookingRow 
-                        key={booking.id} 
-                        booking={booking} 
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
+                    {isLoading ? (
+                      Array(2).fill(0).map((_, index) => (
+                        <BookingRow key={index} isLoading={true} />
+                      ))
+                    ) : (
+                      getFilteredBookings().map(booking => (
+                        <BookingRow 
+                          key={booking.id} 
+                          booking={booking} 
+                          onViewDetails={handleViewDetails}
+                        />
+                      ))
+                    )}
                   </div>
                 ) : (
                   <div className="rounded-md border">
@@ -552,13 +701,19 @@ const Bookings = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {getFilteredBookings().map(booking => (
-                          <BookingRow 
-                            key={booking.id} 
-                            booking={booking} 
-                            onViewDetails={handleViewDetails}
-                          />
-                        ))}
+                        {isLoading ? (
+                          Array(2).fill(0).map((_, index) => (
+                            <BookingRow key={index} isLoading={true} />
+                          ))
+                        ) : (
+                          getFilteredBookings().map(booking => (
+                            <BookingRow 
+                              key={booking.id} 
+                              booking={booking} 
+                              onViewDetails={handleViewDetails}
+                            />
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -574,18 +729,27 @@ const Bookings = () => {
                 <CardDescription>May 17, 2024</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Clock className="h-5 w-5 text-muted-foreground mr-2" />
-                      <div>
-                        <p className="text-sm font-medium">Sarah Williams</p>
-                        <p className="text-xs text-muted-foreground">Room 102</p>
-                      </div>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-8 w-20" />
                     </div>
-                    <Button size="sm" variant="outline">Check In</Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Clock className="h-5 w-5 text-muted-foreground mr-2" />
+                        <div>
+                          <p className="text-sm font-medium">Sarah Williams</p>
+                          <p className="text-xs text-muted-foreground">Room 102</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">Check In</Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -595,18 +759,27 @@ const Bookings = () => {
                 <CardDescription>May 17, 2024</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <Calendar className="h-5 w-5 text-muted-foreground mr-2" />
-                      <div>
-                        <p className="text-sm font-medium">John Adams</p>
-                        <p className="text-xs text-muted-foreground">Room 204</p>
-                      </div>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-8 w-20" />
                     </div>
-                    <Button size="sm" variant="outline">Check Out</Button>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Calendar className="h-5 w-5 text-muted-foreground mr-2" />
+                        <div>
+                          <p className="text-sm font-medium">John Adams</p>
+                          <p className="text-xs text-muted-foreground">Room 204</p>
+                        </div>
+                      </div>
+                      <Button size="sm" variant="outline">Check Out</Button>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
             
@@ -616,24 +789,35 @@ const Bookings = () => {
                 <CardDescription>Current Status</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <p className="text-sm text-muted-foreground">Total Bookings</p>
-                    <p className="text-sm font-medium">42</p>
+                {isLoading ? (
+                  <div className="space-y-2">
+                    {Array(4).fill(0).map((_, i) => (
+                      <div key={i} className="flex justify-between">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-4 w-8" />
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-muted-foreground">Active Guests</p>
-                    <p className="text-sm font-medium">16</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <p className="text-sm text-muted-foreground">Total Bookings</p>
+                      <p className="text-sm font-medium">42</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-sm text-muted-foreground">Active Guests</p>
+                      <p className="text-sm font-medium">16</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-sm text-muted-foreground">Upcoming</p>
+                      <p className="text-sm font-medium">24</p>
+                    </div>
+                    <div className="flex justify-between">
+                      <p className="text-sm text-muted-foreground">Available Rooms</p>
+                      <p className="text-sm font-medium">12</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-muted-foreground">Upcoming</p>
-                    <p className="text-sm font-medium">24</p>
-                  </div>
-                  <div className="flex justify-between">
-                    <p className="text-sm text-muted-foreground">Available Rooms</p>
-                    <p className="text-sm font-medium">12</p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </div>
