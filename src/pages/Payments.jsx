@@ -1,29 +1,13 @@
 
 import React, { useState } from 'react';
-import { 
-  CreditCard, 
-  Search, 
-  Filter, 
-  Plus, 
-  Calendar, 
-  Download, 
-  MoreHorizontal, 
-  CheckCircle, 
-  Clock, 
-  AlertTriangle 
-} from 'lucide-react';
+import { Search, Filter, PlusCircle, Receipt, DollarSign, Download, ArrowUpDown, CheckCircle, Clock, XCircle } from 'lucide-react';
 import Header from '@/components/layout/Header';
 import Sidebar from '@/components/layout/Sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import {
   Table,
   TableBody,
@@ -31,92 +15,81 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/table';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
+
+// Sample payment data
+const payments = [
+  { id: 'INV-1001', resident: 'John Smith', room: '101', amount: '$550', dueDate: '2024-05-10', paidDate: '2024-05-08', status: 'paid', method: 'Credit Card', type: 'Rent' },
+  { id: 'INV-1002', resident: 'Emma Johnson', room: '104', amount: '$650', dueDate: '2024-05-10', paidDate: '2024-05-07', status: 'paid', method: 'Bank Transfer', type: 'Rent' },
+  { id: 'INV-1003', resident: 'Alex Rodriguez', room: '201', amount: '$400', dueDate: '2024-05-15', paidDate: '2024-05-12', status: 'paid', method: 'Credit Card', type: 'Rent' },
+  { id: 'INV-1004', resident: 'Sarah Chen', room: '203', amount: '$550', dueDate: '2024-05-20', paidDate: null, status: 'pending', method: null, type: 'Rent' },
+  { id: 'INV-1005', resident: 'David Wilson', room: '205', amount: '$750', dueDate: '2024-05-21', paidDate: null, status: 'pending', method: null, type: 'Rent' },
+  { id: 'INV-1006', resident: 'Michael Brown', room: '405', amount: '$700', dueDate: '2024-05-22', paidDate: null, status: 'pending', method: null, type: 'Rent' },
+  { id: 'INV-1007', resident: 'Lisa Taylor', room: '302', amount: '$600', dueDate: '2024-04-15', paidDate: null, status: 'overdue', method: null, type: 'Rent' },
+  { id: 'INV-1008', resident: 'Robert Garcia', room: '402', amount: '$75', dueDate: '2024-05-05', paidDate: '2024-05-03', status: 'paid', method: 'Credit Card', type: 'Utilities' },
+  { id: 'INV-1009', resident: 'Jennifer Lee', room: '301', amount: '$80', dueDate: '2024-05-20', paidDate: null, status: 'pending', method: null, type: 'Utilities' },
+  { id: 'INV-1010', resident: 'James Wilson', room: '105', amount: '$550', dueDate: '2024-04-20', paidDate: null, status: 'overdue', method: null, type: 'Rent' },
+];
+
+// Payment Status Badge component
+const PaymentStatusBadge = ({ status }) => {
+  const statusStyles = {
+    paid: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500 flex items-center",
+    pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 flex items-center",
+    overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 flex items-center"
+  };
+  
+  const StatusIcon = {
+    paid: CheckCircle,
+    pending: Clock,
+    overdue: XCircle
+  }[status];
+  
+  return (
+    <Badge variant="outline" className={statusStyles[status]}>
+      {StatusIcon && <StatusIcon className="h-3 w-3 mr-1" />}
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </Badge>
+  );
+};
 
 const Payments = () => {
-  const [view, setView] = useState('all');
-  const [period, setPeriod] = useState('month');
-
-  // Sample payments data
-  const payments = {
-    all: [
-      { id: 1, resident: 'Michael Brown', room: '405', amount: 700, date: '2024-05-05', status: 'paid' },
-      { id: 2, resident: 'Lisa Wang', room: '210', amount: 650, date: '2024-05-03', status: 'paid' },
-      { id: 3, resident: 'David Wilson', room: '203', amount: 650, dueDate: '2024-05-20', status: 'pending' },
-      { id: 4, resident: 'Sarah Chen', room: '118', amount: 550, dueDate: '2024-05-21', status: 'pending' },
-      { id: 5, resident: 'James Miller', room: '302', amount: 700, dueDate: '2024-05-10', status: 'overdue', daysLate: 5 },
-      { id: 6, resident: 'Olivia Davis', room: '115', amount: 600, dueDate: '2024-05-08', status: 'overdue', daysLate: 7 },
-      { id: 7, resident: 'Thomas Johnson', room: '201', amount: 650, date: '2024-05-01', status: 'paid' },
-      { id: 8, resident: 'Emily Zhang', room: '304', amount: 700, dueDate: '2024-05-25', status: 'pending' },
-    ],
-    overview: {
-      totalReceived: 2000,
-      pendingAmount: 1850,
-      overdueAmount: 1300,
-      monthlyTarget: 5500
-    }
+  const [selectedTab, setSelectedTab] = useState('all');
+  
+  // Filter payments based on status
+  const getFilteredPayments = () => {
+    if (selectedTab === 'all') return payments;
+    return payments.filter(payment => payment.status === selectedTab);
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    }).format(date);
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const getStatusBadge = (status, daysLate) => {
-    switch(status) {
-      case 'paid':
-        return (
-          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
-            <CheckCircle className="mr-1 h-3 w-3" /> Paid
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge variant="outline" className="bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 border-amber-500/20">
-            <Clock className="mr-1 h-3 w-3" /> Pending
-          </Badge>
-        );
-      case 'overdue':
-        return (
-          <Badge variant="outline" className="bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 border-rose-500/20">
-            <AlertTriangle className="mr-1 h-3 w-3" /> {daysLate} days late
-          </Badge>
-        );
-      default:
-        return null;
-    }
-  };
+  // Calculate total due/paid
+  const totalDue = payments.reduce((sum, payment) => {
+    return sum + parseFloat(payment.amount.replace('$', ''));
+  }, 0);
+  
+  const totalPaid = payments
+    .filter(payment => payment.status === 'paid')
+    .reduce((sum, payment) => {
+      return sum + parseFloat(payment.amount.replace('$', ''));
+    }, 0);
+  
+  const totalPending = payments
+    .filter(payment => payment.status === 'pending')
+    .reduce((sum, payment) => {
+      return sum + parseFloat(payment.amount.replace('$', ''));
+    }, 0);
+  
+  const totalOverdue = payments
+    .filter(payment => payment.status === 'overdue')
+    .reduce((sum, payment) => {
+      return sum + parseFloat(payment.amount.replace('$', ''));
+    }, 0);
 
   return (
     <div className="min-h-screen flex">
@@ -124,20 +97,41 @@ const Payments = () => {
       <div className="flex-1 ml-64">
         <Header />
         <main className="p-6">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold tracking-tight">Payments</h1>
-            <p className="text-muted-foreground">Manage resident payments</p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 animate-in fade-in">
+            <div>
+              <h1 className="font-semibold tracking-tight">Payments</h1>
+              <p className="text-muted-foreground">Manage resident payments</p>
+            </div>
+            <div className="flex mt-4 md:mt-0">
+              <Button variant="outline" className="mr-2">
+                <Download className="mr-2 h-4 w-4" />
+                Export
+              </Button>
+              <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                New Invoice
+              </Button>
+            </div>
           </div>
           
-          {/* Payment Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Total Received</CardTitle>
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(payments.overview.totalReceived)}</div>
-                <p className="text-xs text-muted-foreground mt-1">This month</p>
+                <div className="text-2xl font-bold">${totalDue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">All invoices</p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Paid</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-emerald-600">${totalPaid.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">{payments.filter(p => p.status === 'paid').length} payments</p>
               </CardContent>
             </Card>
             
@@ -146,8 +140,8 @@ const Payments = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Pending</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(payments.overview.pendingAmount)}</div>
-                <p className="text-xs text-muted-foreground mt-1">{payments.all.filter(p => p.status === 'pending').length} payments</p>
+                <div className="text-2xl font-bold text-amber-600">${totalPending.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">{payments.filter(p => p.status === 'pending').length} payments</p>
               </CardContent>
             </Card>
             
@@ -156,260 +150,224 @@ const Payments = () => {
                 <CardTitle className="text-sm font-medium text-muted-foreground">Overdue</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-rose-500">{formatCurrency(payments.overview.overdueAmount)}</div>
-                <p className="text-xs text-muted-foreground mt-1">{payments.all.filter(p => p.status === 'overdue').length} payments</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Monthly Target</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(payments.overview.monthlyTarget)}</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {Math.round((payments.overview.totalReceived / payments.overview.monthlyTarget) * 100)}% achieved
-                </p>
+                <div className="text-2xl font-bold text-red-600">${totalOverdue.toFixed(2)}</div>
+                <p className="text-xs text-muted-foreground mt-1">{payments.filter(p => p.status === 'overdue').length} payments</p>
               </CardContent>
             </Card>
           </div>
           
-          {/* Payments Table */}
-          <Card className="shadow-sm">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg flex items-center">
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Payment Management
-                  </CardTitle>
-                  <CardDescription>View and manage all resident payments</CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select value={period} onValueChange={setPeriod}>
-                    <SelectTrigger className="w-[180px]">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      <SelectValue placeholder="Select period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
-                      <SelectItem value="quarter">This Quarter</SelectItem>
-                      <SelectItem value="year">This Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" /> Record Payment
-                  </Button>
+          <Card className="mb-6">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col md:flex-row gap-4 justify-between">
+                <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full max-w-md">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="all">All</TabsTrigger>
+                    <TabsTrigger value="paid">Paid</TabsTrigger>
+                    <TabsTrigger value="pending">Pending</TabsTrigger>
+                    <TabsTrigger value="overdue">Overdue</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="Search payments..."
+                      className="w-[200px] pl-9"
+                    />
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="gap-1">
+                        <Filter className="h-4 w-4" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuCheckboxItem checked>
+                        Payment Type
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem checked>
+                        Payment Method
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem>Date Range</DropdownMenuCheckboxItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardHeader>
+            
             <CardContent>
-              <Tabs defaultValue="all" className="w-full" onValueChange={setView}>
-                <div className="flex items-center justify-between mb-4">
-                  <TabsList>
-                    <TabsTrigger value="all" className="flex items-center">
-                      All Payments
-                    </TabsTrigger>
-                    <TabsTrigger value="paid" className="flex items-center">
-                      <CheckCircle className="mr-1.5 h-3.5 w-3.5 text-emerald-500" />
-                      Paid
-                    </TabsTrigger>
-                    <TabsTrigger value="pending" className="flex items-center">
-                      <Clock className="mr-1.5 h-3.5 w-3.5 text-amber-500" />
-                      Pending
-                    </TabsTrigger>
-                    <TabsTrigger value="overdue" className="flex items-center">
-                      <AlertTriangle className="mr-1.5 h-3.5 w-3.5 text-rose-500" />
-                      Overdue
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input type="search" placeholder="Search payments..." className="pl-9 w-[200px]" />
-                    </div>
-                    <Button size="icon" variant="outline">
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                    <Button size="icon" variant="outline">
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <TabsContent value="all" className="m-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Resident</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Invoice ID</TableHead>
+                      <TableHead>Resident</TableHead>
+                      <TableHead>Room</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>
+                        <div className="flex items-center">
+                          Due Date
+                          <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </div>
+                      </TableHead>
+                      <TableHead>
+                        <div className="flex items-center">
+                          Amount
+                          <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </div>
+                      </TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {getFilteredPayments().map((payment) => (
+                      <TableRow key={payment.id}>
+                        <TableCell className="font-medium">{payment.id}</TableCell>
+                        <TableCell>{payment.resident}</TableCell>
+                        <TableCell>{payment.room}</TableCell>
+                        <TableCell>{payment.type}</TableCell>
+                        <TableCell>{payment.dueDate}</TableCell>
+                        <TableCell>{payment.amount}</TableCell>
+                        <TableCell>
+                          <PaymentStatusBadge status={payment.status} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end space-x-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Receipt className="h-4 w-4" />
+                            </Button>
+                            {payment.status !== 'paid' && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                                <DollarSign className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.all.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">{payment.resident}</TableCell>
-                          <TableCell>{payment.room}</TableCell>
-                          <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                          <TableCell>
-                            {payment.status === 'paid' 
-                              ? formatDate(payment.date) 
-                              : formatDate(payment.dueDate)}
-                          </TableCell>
-                          <TableCell>
-                            {getStatusBadge(payment.status, payment.daysLate)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                                <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Payment</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-                
-                <TabsContent value="paid" className="m-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Resident</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Date Paid</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.all.filter(p => p.status === 'paid').map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">{payment.resident}</TableCell>
-                          <TableCell>{payment.room}</TableCell>
-                          <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                          <TableCell>{formatDate(payment.date)}</TableCell>
-                          <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Download Receipt</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Payment</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-                
-                <TabsContent value="pending" className="m-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Resident</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.all.filter(p => p.status === 'pending').map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">{payment.resident}</TableCell>
-                          <TableCell>{payment.room}</TableCell>
-                          <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                          <TableCell>{formatDate(payment.dueDate)}</TableCell>
-                          <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                                <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Payment</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-                
-                <TabsContent value="overdue" className="m-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Resident</TableHead>
-                        <TableHead>Room</TableHead>
-                        <TableHead>Amount</TableHead>
-                        <TableHead>Due Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {payments.all.filter(p => p.status === 'overdue').map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">{payment.resident}</TableCell>
-                          <TableCell>{payment.room}</TableCell>
-                          <TableCell>{formatCurrency(payment.amount)}</TableCell>
-                          <TableCell>{formatDate(payment.dueDate)}</TableCell>
-                          <TableCell>{getStatusBadge(payment.status, payment.daysLate)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                                <DropdownMenuItem>Mark as Paid</DropdownMenuItem>
-                                <DropdownMenuItem>Edit Payment</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-              </Tabs>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Payment Methods</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Credit Card</span>
+                      <span className="text-sm font-medium">65%</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
+                      <div className="bg-primary h-full rounded-full" style={{ width: '65%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Bank Transfer</span>
+                      <span className="text-sm font-medium">25%</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
+                      <div className="bg-primary h-full rounded-full" style={{ width: '25%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Cash</span>
+                      <span className="text-sm font-medium">10%</span>
+                    </div>
+                    <div className="w-full h-2 bg-muted rounded-full overflow-hidden mt-2">
+                      <div className="bg-primary h-full rounded-full" style={{ width: '10%' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Payment Timeline</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Emma Johnson paid $650</p>
+                      <p className="text-xs text-muted-foreground">Today at 9:32 AM</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">John Smith paid $550</p>
+                      <p className="text-xs text-muted-foreground">Yesterday at 5:17 PM</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center mr-3">
+                      <Clock className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Sarah Chen has pending payment</p>
+                      <p className="text-xs text-muted-foreground">Due in 3 days</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="h-9 w-9 rounded-full bg-red-100 flex items-center justify-center mr-3">
+                      <XCircle className="h-5 w-5 text-red-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Lisa Taylor missed payment</p>
+                      <p className="text-xs text-muted-foreground">20 days overdue</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Button className="w-full">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Create New Invoice
+                  </Button>
+                  
+                  <Button variant="outline" className="w-full">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download Payment Report
+                  </Button>
+                  
+                  <Button variant="outline" className="w-full">
+                    <Clock className="h-4 w-4 mr-2" />
+                    Send Payment Reminders
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </main>
       </div>
     </div>
