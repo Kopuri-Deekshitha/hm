@@ -1,12 +1,15 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 interface DashboardCardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   title?: string;
   description?: string;
   className?: string;
+  headerAction?: React.ReactNode;
+  noPadding?: boolean;
 }
 
 const DashboardCard = ({ 
@@ -14,24 +17,35 @@ const DashboardCard = ({
   title, 
   description, 
   className,
+  headerAction,
+  noPadding = false,
   ...props 
 }: DashboardCardProps) => {
   return (
-    <div 
+    <Card 
       className={cn(
-        "glass-card p-6 card-hover animate-in fade-in", 
+        "shadow-sm", 
         className
       )} 
       {...props}
     >
-      {(title || description) && (
-        <div className="mb-4">
-          {title && <h3 className="text-lg font-medium">{title}</h3>}
-          {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
-        </div>
+      {(title || description || headerAction) && (
+        <CardHeader className={cn("flex-row items-start justify-between pb-2", noPadding && "px-0")}>
+          <div>
+            {title && <CardTitle className="text-lg">{title}</CardTitle>}
+            {description && <CardDescription>{description}</CardDescription>}
+          </div>
+          {headerAction && (
+            <div>
+              {headerAction}
+            </div>
+          )}
+        </CardHeader>
       )}
-      {children}
-    </div>
+      <CardContent className={cn(noPadding && "px-0")}>
+        {children}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -8,7 +8,10 @@ import {
   Receipt, 
   Wrench, 
   Menu, 
-  ChevronLeft 
+  ChevronLeft,
+  Calendar,
+  CreditCard,
+  BarChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -50,8 +53,10 @@ const Sidebar = () => {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/rooms', label: 'Rooms', icon: BedDouble },
+    { path: '/bookings', label: 'Bookings', icon: Calendar },
     { path: '/residents', label: 'Residents', icon: Users },
-    { path: '/billing', label: 'Billing', icon: Receipt },
+    { path: '/payments', label: 'Payments', icon: CreditCard },
+    { path: '/reports', label: 'Reports', icon: BarChart },
     { path: '/maintenance', label: 'Maintenance', icon: Wrench },
   ];
 
